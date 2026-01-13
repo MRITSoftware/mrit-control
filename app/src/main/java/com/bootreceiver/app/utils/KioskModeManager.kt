@@ -95,22 +95,21 @@ class KioskModeManager(private val activity: Activity) {
     
     /**
      * Monitora se o app foi minimizado e traz de volta
+     * Nota: Este monitoramento é simplificado pois o KioskModeService já faz
+     * o trabalho de verificar se o app está rodando e reabrir se necessário
      */
     private fun startMonitoring() {
+        // O monitoramento principal é feito pelo KioskModeService
+        // Este método pode ser usado para verificações adicionais se necessário
         scope.launch {
             while (isKioskActive && !activity.isFinishing) {
                 try {
-                    // Verifica se a activity está em foreground
-                    if (!activity.isResumed) {
-                        Log.d(TAG, "⚠️ Activity não está em foreground. Tentando trazer de volta...")
-                        activity.moveTaskToBack(false)
-                        delay(500)
-                        activity.moveTaskToBack(false) // Tenta novamente
-                    }
-                    delay(2000) // Verifica a cada 2 segundos
+                    // Verifica periodicamente se a activity ainda está ativa
+                    // O KioskModeService é responsável por reabrir o app se necessário
+                    delay(5000) // Verifica a cada 5 segundos
                 } catch (e: Exception) {
                     Log.e(TAG, "Erro no monitoramento: ${e.message}", e)
-                    delay(5000)
+                    delay(10000)
                 }
             }
         }
