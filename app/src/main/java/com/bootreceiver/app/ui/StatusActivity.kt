@@ -42,9 +42,9 @@ class StatusActivity : AppCompatActivity() {
     private lateinit var btnCheckCommand: Button
     private lateinit var btnTestReboot: Button
     
-    private val rebootManager = RebootManager(this)
+    private lateinit var rebootManager: RebootManager
     private val supabaseManager = SupabaseManager()
-    private val deviceId = DeviceIdManager.getDeviceId(this)
+    private lateinit var deviceId: String
     private val updateScope = CoroutineScope(Dispatchers.Main + Job())
     
     private var isServiceBound = false
@@ -53,6 +53,10 @@ class StatusActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_status)
+        
+        // Inicializa managers e device ID (após onCreate)
+        rebootManager = RebootManager(this)
+        deviceId = DeviceIdManager.getDeviceId(this)
         
         // Inicializa views
         statusDeviceAdmin = findViewById(R.id.statusDeviceAdmin)
