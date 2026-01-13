@@ -24,6 +24,9 @@ class KioskModeReceiver : BroadcastReceiver() {
             Intent.ACTION_CLOSE_SYSTEM_DIALOGS -> {
                 // Intercepta quando o usuário tenta abrir menu do sistema
                 Log.d(TAG, "🔒 Menu do sistema interceptado")
+                
+                // Verifica se kiosk está ativo e reabre app se necessário
+                checkAndReopenApp(context)
             }
             "android.intent.action.USER_PRESENT" -> {
                 // Quando o usuário desbloqueia a tela
