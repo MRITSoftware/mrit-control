@@ -68,6 +68,42 @@
                 android:textColor="#B0FFFFFF" />
         </LinearLayout>
 
+        <!-- Reiniciar App -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="16dp"
+            android:background="@drawable/glassmorphism_card"
+            android:layout_marginBottom="16dp"
+            android:elevation="4dp">
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Reiniciar App"
+                android:textSize="18sp"
+                android:textStyle="bold"
+                android:textColor="#FFFFFF"
+                android:layout_marginBottom="8dp" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Reinicia o app configurado (fecha e reabre)"
+                android:textSize="12sp"
+                android:textColor="#B0FFFFFF"
+                android:layout_marginBottom="8dp" />
+
+            <androidx.appcompat.widget.AppCompatButton
+                android:id="@+id/btnRestartApp"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Reiniciar App Agora"
+                android:textColor="#FFFFFF"
+                android:backgroundTint="#3B82F6" />
+        </LinearLayout>
+
         <!-- Informações do Dispositivo -->
         <LinearLayout
             android:layout_width="match_parent"

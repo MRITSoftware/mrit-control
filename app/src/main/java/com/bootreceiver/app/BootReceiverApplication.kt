@@ -52,6 +52,21 @@ class BootReceiverApplication : Application() {
         
         // Atualiza registro do dispositivo no Supabase (atualiza last_seen)
         updateDeviceRegistration()
+        
+        // Inicia o serviço de monitoramento de comandos de reiniciar app
+        android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
+            try {
+                val monitorIntent = Intent(this, com.bootreceiver.app.service.AppRestartMonitorService::class.java)
+                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+                    startForegroundService(monitorIntent)
+                } else {
+                    startService(monitorIntent)
+                }
+                Log.d(TAG, "AppRestartMonitorService iniciado")
+            } catch (e: Exception) {
+                Log.e(TAG, "Erro ao iniciar AppRestartMonitorService: ${e.message}", e)
+            }
+        }, 1000) // Delay de 1 segundo para garantir inicialização completa
     }
     
     /**

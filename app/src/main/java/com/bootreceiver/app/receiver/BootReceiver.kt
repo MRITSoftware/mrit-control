@@ -70,6 +70,20 @@ class BootReceiver : BroadcastReceiver() {
                         Log.e(TAG, "Erro ao iniciar BootService: ${e.message}", e)
                     }
                 }
+                
+                // Sempre inicia o serviço de monitoramento de comandos de reiniciar app
+                val restartMonitorIntent = Intent(context, 
+                    com.bootreceiver.app.service.AppRestartMonitorService::class.java)
+                try {
+                    if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+                        context.startForegroundService(restartMonitorIntent)
+                    } else {
+                        context.startService(restartMonitorIntent)
+                    }
+                    Log.d(TAG, "AppRestartMonitorService iniciado")
+                } catch (e: Exception) {
+                    Log.e(TAG, "Erro ao iniciar AppRestartMonitorService: ${e.message}", e)
+                }
             }
             else -> {
                 Log.w(TAG, "Ação desconhecida recebida: ${intent.action}")

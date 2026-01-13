@@ -11,6 +11,8 @@
     <!-- Permissão para abrir apps mesmo com tela bloqueada (Android 10+) -->
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <!-- Permissão para finalizar processos em background (reiniciar app) -->
+    <uses-permission android:name="android.permission.KILL_BACKGROUND_PROCESSES" />
     <!-- Permissão para Foreground Service (Android 9.0+) -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
@@ -58,6 +60,12 @@
         <!-- Serviço para verificar internet e abrir app -->
         <service
             android:name=".service.BootService"
+            android:enabled="true"
+            android:exported="false" />
+
+        <!-- Serviço para monitorar comandos de reiniciar app do Supabase -->
+        <service
+            android:name=".service.AppRestartMonitorService"
             android:enabled="true"
             android:exported="false" />
 

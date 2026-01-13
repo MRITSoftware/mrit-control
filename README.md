@@ -10,6 +10,8 @@ Aplicativo Android desenvolvido em Kotlin para **Android Sticks/TV Box** usado e
 - ✅ **Seleção de app na primeira vez**: Tela para escolher qual app será aberto automaticamente
 - ✅ **Verificação de internet**: Aguarda conexão antes de abrir o app
 - ✅ **Retry automático**: Tenta novamente se não houver internet (até 60 tentativas)
+- ✅ **Reiniciar app remotamente**: Monitora comandos no Supabase e reinicia o app configurado
+- ✅ **Reiniciar app manualmente**: Botão na tela de Status para reiniciar o app
 - ✅ **Sem interface visual**: Roda em segundo plano após configuração
 - ✅ **Logs detalhados**: Facilita debug via Logcat
 - ✅ **Compatível com Android TV/Stick**: Otimizado para dispositivos sem interação do usuário
@@ -100,7 +102,9 @@ O app requer as seguintes permissões (já configuradas no `AndroidManifest.xml`
 
 **💡 Dica:** Se o app fechar por algum motivo, ele será aberto automaticamente no próximo boot do dispositivo.
 
-**📖 Guia completo de uso:** Veja [COMO_USAR.md](COMO_USAR.md)
+**📖 Guias:**
+- [COMO_USAR.md](COMO_USAR.md) - Guia completo de uso
+- [COMO_REINICIAR_APP.md](COMO_REINICIAR_APP.md) - Como reiniciar o app (manual ou remoto)
 
 ## 📋 Como Funciona
 
