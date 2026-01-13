@@ -248,23 +248,37 @@ class StatusActivity : AppCompatActivity() {
                 } else {
                     val apiLevel = Build.VERSION.SDK_INT
                     val minApiLevel = android.os.Build.VERSION_CODES.N
+                    val apiLevelOk = apiLevel >= minApiLevel
+                    
+                    // Monta mensagem de erro detalhada
+                    val message = buildString {
+                        append("O dispositivo não foi reiniciado.\n\n")
+                        append("Possíveis causas:\n")
+                        append("• Device Admin não está realmente ativo\n")
+                        append("• App não foi reinstalado após adicionar política <reboot />\n")
+                        append("• Política <reboot /> não foi aplicada corretamente\n")
+                        append("• Fabricante bloqueou reboot remoto\n")
+                        if (!apiLevelOk) {
+                            append("• API Level muito antigo ($apiLevel, precisa $minApiLevel+)\n")
+                        } else {
+                            append("• API Level OK ($apiLevel)\n")
+                        }
+                        append("\n")
+                        append("Soluções:\n")
+                        append("1. Desative Device Admin\n")
+                        append("2. Desinstale o app completamente\n")
+                        append("3. Reinstale o app (versão mais recente)\n")
+                        append("4. Ative Device Admin novamente\n")
+                        append("5. Reinicie o dispositivo manualmente uma vez\n")
+                        append("6. Teste novamente\n\n")
+                        append("⚠️ IMPORTANTE: A política <reboot /> só é aplicada quando o Device Admin é ativado. Se você ativou antes de reinstalar, ela não foi aplicada!\n\n")
+                        append("Verifique os logs para mais detalhes.")
+                    }
+                    
                     // Mostra diálogo com informações detalhadas
                     AlertDialog.Builder(this@StatusActivity)
                         .setTitle("❌ Falha ao Reiniciar")
-                        .setMessage(
-                            "O dispositivo não foi reiniciado.\n\n" +
-                            "Possíveis causas:\n" +
-                            "• Device Admin não está realmente ativo\n" +
-                            "• App não foi reinstalado após ativar Device Admin\n" +
-                            "• Fabricante bloqueou reboot remoto\n" +
-                            "• API Level muito antigo ($apiLevel, precisa $minApiLevel+)\n\n" +
-                            "Soluções:\n" +
-                            "1. Desative Device Admin\n" +
-                            "2. Reinstale o app\n" +
-                            "3. Ative Device Admin novamente\n" +
-                            "4. Teste novamente\n\n" +
-                            "Verifique os logs para mais detalhes."
-                        )
+                        .setMessage(message)
                         .setPositiveButton("OK", null)
                         .show()
                     btnTestReboot.isEnabled = true
