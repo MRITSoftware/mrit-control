@@ -294,21 +294,11 @@ class AppSelectionActivity : AppCompatActivity() {
         val permissionChecker = PermissionChecker(this)
         val status = permissionChecker.getFullStatus()
         
-        // Verifica Device Admin
-        val rebootManager = com.bootreceiver.app.utils.RebootManager(this)
-        val isDeviceAdminActive = rebootManager.isDeviceAdminActive()
-        
-        if (!status.isReady || !isDeviceAdminActive) {
+        if (!status.isReady) {
             Log.w(TAG, "Problemas detectados: ${status.issues.joinToString()}")
-            if (!isDeviceAdminActive) {
-                Log.w(TAG, "Device Admin não está ativo")
-            }
             
             val message = buildString {
                 append("Para garantir que o app funcione corretamente, é necessário:\n\n")
-                if (!isDeviceAdminActive) {
-                    append("• ⚠️ Device Admin (necessário para reiniciar dispositivo remotamente)\n")
-                }
                 status.issues.forEach { issue ->
                     append("• $issue\n")
                 }
@@ -319,10 +309,6 @@ class AppSelectionActivity : AppCompatActivity() {
                 .setTitle("Configurações Necessárias")
                 .setMessage(message)
                 .setPositiveButton("Configurar") { _, _ ->
-                    // Solicita Device Admin se não estiver ativo
-                    if (!isDeviceAdminActive) {
-                        rebootManager.requestDeviceAdmin()
-                    }
                     // Abre configurações de otimização de bateria
                     if (status.batteryOptimized) {
                         permissionChecker.openBatteryOptimizationSettings()

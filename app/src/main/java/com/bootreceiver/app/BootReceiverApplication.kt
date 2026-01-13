@@ -4,7 +4,6 @@ import android.app.Application
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.util.Log
-import com.bootreceiver.app.service.RebootMonitorService
 import com.bootreceiver.app.utils.DeviceIdManager
 import com.bootreceiver.app.utils.PreferenceManager
 import com.bootreceiver.app.utils.SupabaseManager
@@ -53,22 +52,6 @@ class BootReceiverApplication : Application() {
         
         // Atualiza registro do dispositivo no Supabase (atualiza last_seen)
         updateDeviceRegistration()
-        
-        // Inicia o serviço de monitoramento de comandos de reiniciar como Foreground Service
-        // Usa um pequeno delay para garantir que o app esteja totalmente inicializado
-        android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
-            try {
-                val monitorIntent = Intent(this, RebootMonitorService::class.java)
-                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
-                    startForegroundService(monitorIntent)
-                } else {
-                    startService(monitorIntent)
-                }
-                Log.d(TAG, "RebootMonitorService iniciado como Foreground Service")
-            } catch (e: Exception) {
-                Log.e(TAG, "Erro ao iniciar RebootMonitorService: ${e.message}", e)
-            }
-        }, 500) // Delay de 500ms para garantir inicialização completa
     }
     
     /**

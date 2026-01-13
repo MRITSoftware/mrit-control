@@ -13,8 +13,8 @@ import kotlinx.serialization.Serializable
 /**
  * Gerenciador para comunicação com Supabase
  * 
- * Esta classe gerencia a conexão com o Supabase e verifica
- * comandos de reiniciar dispositivo na tabela 'device_commands'
+ * Esta classe gerencia a conexão com o Supabase e registra
+ * dispositivos na tabela 'devices'
  */
 class SupabaseManager {
     
@@ -23,44 +23,6 @@ class SupabaseManager {
         supabaseKey = SUPABASE_KEY
     ) {
         install(Postgrest)
-    }
-    
-    /**
-     * Verifica se há um comando de reiniciar pendente
-     * 
-     * @param deviceId ID único do dispositivo (pode ser Android ID)
-     * @return true se houver comando pendente, false caso contrário
-     */
-    suspend fun checkRebootCommand(deviceId: String): Boolean = withContext(Dispatchers.IO) {
-        try {
-            Log.d(TAG, "🔍 Verificando comando de reiniciar para dispositivo: $deviceId")
-            
-            val response = client.from("device_commands")
-                .select(columns = Columns.ALL) {
-                    filter {
-                        eq("device_id", deviceId)
-                        eq("command", "reboot")
-                        eq("executed", false)
-                    }
-                }
-                .decodeSingle<DeviceCommand>()
-            
-            Log.d(TAG, "✅ Comando encontrado! ID: ${response.id}, Command: ${response.command}, Executed: ${response.executed}")
-            Log.d(TAG, "   Device ID: ${response.device_id}, Created: ${response.created_at}")
-            true
-        } catch (e: Exception) {
-            // Se não encontrar nenhum comando, retorna false
-            if (e.message?.contains("No rows") == true || 
-                e.message?.contains("not found") == true ||
-                e.message?.contains("No value") == true) {
-                Log.d(TAG, "ℹ️ Nenhum comando de reiniciar pendente para device_id: $deviceId")
-                false
-            } else {
-                Log.e(TAG, "❌ Erro ao verificar comando: ${e.message}", e)
-                Log.e(TAG, "   Exception type: ${e.javaClass.simpleName}")
-                false
-            }
-        }
     }
     
     /**
@@ -135,49 +97,6 @@ class SupabaseManager {
         }
     }
     
-    /**
-     * Marca um comando como executado
-     * 
-     * @param deviceId ID único do dispositivo
-     */
-    suspend fun markCommandAsExecuted(deviceId: String): Boolean = withContext(Dispatchers.IO) {
-        try {
-            Log.d(TAG, "Marcando comando como executado para dispositivo: $deviceId")
-            
-            // Primeiro, busca o comando
-            val command = client.from("device_commands")
-                .select(columns = Columns.ALL) {
-                    filter {
-                        eq("device_id", deviceId)
-                        eq("command", "reboot")
-                        eq("executed", false)
-                    }
-                }
-                .decodeSingle<DeviceCommand>()
-            
-            // Atualiza o comando como executado
-            if (command.id != null) {
-                val updateData = mapOf(
-                    "executed" to true,
-                    "executed_at" to java.time.Instant.now().toString()
-                )
-                
-                client.from("device_commands")
-                    .update(updateData) {
-                        filter {
-                            eq("id", command.id)
-                        }
-                    }
-            }
-            
-            Log.d(TAG, "Comando marcado como executado: ${command.id}")
-            true
-        } catch (e: Exception) {
-            Log.e(TAG, "Erro ao marcar comando como executado: ${e.message}", e)
-            false
-        }
-    }
-    
     companion object {
         private const val TAG = "SupabaseManager"
         private const val SUPABASE_URL = "https://kihyhoqbrkwbfudttevo.supabase.co"
@@ -201,16 +120,3 @@ data class Device(
     val updated_at: String? = null
 )
 
-/**
- * Modelo de dados para comando de dispositivo
- * Estrutura corresponde à tabela device_commands no Supabase
- */
-@Serializable
-data class DeviceCommand(
-    val id: String? = null,  // UUID
-    val device_id: String,
-    val command: String,  // "reboot" para reiniciar
-    val executed: Boolean = false,
-    val created_at: String? = null,  // TIMESTAMP WITH TIME ZONE
-    val executed_at: String? = null  // TIMESTAMP WITH TIME ZONE
-)

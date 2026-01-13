@@ -40,44 +40,6 @@
                 android:textColor="#B0FFFFFF" />
         </LinearLayout>
 
-        <!-- Device Admin Status -->
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:padding="16dp"
-            android:background="@drawable/glassmorphism_card"
-            android:layout_marginBottom="16dp"
-            android:elevation="4dp">
-
-            <TextView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="Device Admin"
-                android:textSize="18sp"
-                android:textStyle="bold"
-                android:textColor="#FFFFFF"
-                android:layout_marginBottom="8dp" />
-
-            <TextView
-                android:id="@+id/statusDeviceAdmin"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="Verificando..."
-                android:textSize="14sp"
-                android:textColor="#B0FFFFFF"
-                android:layout_marginBottom="8dp" />
-
-            <androidx.appcompat.widget.AppCompatButton
-                android:id="@+id/btnRequestDeviceAdmin"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="Ativar Device Admin"
-                android:textColor="#FFFFFF"
-                android:backgroundTint="#3B82F6"
-                android:layout_marginTop="8dp" />
-        </LinearLayout>
-
         <!-- Serviço Status -->
         <LinearLayout
             android:layout_width="match_parent"
@@ -104,80 +66,6 @@
                 android:text="Verificando..."
                 android:textSize="14sp"
                 android:textColor="#B0FFFFFF" />
-        </LinearLayout>
-
-        <!-- Comando Status -->
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:padding="16dp"
-            android:background="@drawable/glassmorphism_card"
-            android:layout_marginBottom="16dp"
-            android:elevation="4dp">
-
-            <TextView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="Comando no Supabase"
-                android:textSize="18sp"
-                android:textStyle="bold"
-                android:textColor="#FFFFFF"
-                android:layout_marginBottom="8dp" />
-
-            <TextView
-                android:id="@+id/statusCommand"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="Verificando..."
-                android:textSize="14sp"
-                android:textColor="#B0FFFFFF"
-                android:layout_marginBottom="8dp" />
-
-            <androidx.appcompat.widget.AppCompatButton
-                android:id="@+id/btnCheckCommand"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="Verificar Comando Agora"
-                android:textColor="#FFFFFF"
-                android:backgroundTint="#10B981"
-                android:layout_marginTop="8dp" />
-        </LinearLayout>
-
-        <!-- Teste de Reboot -->
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:padding="16dp"
-            android:background="@drawable/glassmorphism_card"
-            android:layout_marginBottom="16dp"
-            android:elevation="4dp">
-
-            <TextView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="Teste de Reboot"
-                android:textSize="18sp"
-                android:textStyle="bold"
-                android:textColor="#FFFFFF"
-                android:layout_marginBottom="8dp" />
-
-            <TextView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="⚠️ ATENÇÃO: Isso vai reiniciar o dispositivo agora!"
-                android:textSize="12sp"
-                android:textColor="#FBBF24"
-                android:layout_marginBottom="8dp" />
-
-            <androidx.appcompat.widget.AppCompatButton
-                android:id="@+id/btnTestReboot"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="Testar Reboot Agora"
-                android:textColor="#FFFFFF"
-                android:backgroundTint="#EF4444" />
         </LinearLayout>
 
         <!-- Informações do Dispositivo -->
