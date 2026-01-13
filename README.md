@@ -92,10 +92,19 @@ O app requer as seguintes permissões (já configuradas no `AndroidManifest.xml`
 
 ### 3. Primeira Execução
 
-1. Instale o app no Android Stick
-2. Abra o app manualmente (aparecerá a tela de seleção)
-3. Escolha o aplicativo que deve ser aberto automaticamente
-4. O app será salvo e usado nos próximos boots
+**⚠️ IMPORTANTE: Ordem de Configuração**
+
+1. **Instale o app** no Android Stick
+2. **Ative Device Admin PRIMEIRO** (antes de abrir o app):
+   - Vá em: **Configurações → Segurança → Administradores do dispositivo**
+   - Encontre **MRIT Control** e **ative**
+   - Isso é crítico para que o reboot remoto funcione!
+3. **Abra o app** manualmente (aparecerá a tela de seleção)
+4. **Registre o dispositivo** (informe o email da unidade)
+5. **Escolha o aplicativo** que deve ser aberto automaticamente
+6. O app será salvo e usado nos próximos boots
+
+**📖 Guia completo:** Veja [ORDEM_CONFIGURACAO.md](ORDEM_CONFIGURACAO.md)
 
 ## 📋 Como Funciona
 

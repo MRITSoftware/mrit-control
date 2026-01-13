@@ -149,10 +149,24 @@ class RebootManager(private val context: Context) {
             Log.w(TAG, "Runtime.exec('reboot') falhou: ${e.message}")
         }
         
-        Log.e(TAG, "❌ Todos os métodos de reiniciar falharam. Verifique:")
-        Log.e(TAG, "  1. Device Admin está ativo? ${isDeviceAdminActive()}")
-        Log.e(TAG, "  2. Permissões de reboot no device_admin.xml estão corretas?")
-        Log.e(TAG, "  3. Dispositivo tem root? (para métodos alternativos)")
+        Log.e(TAG, "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+        Log.e(TAG, "❌ TODOS OS MÉTODOS DE REINICIAR FALHARAM")
+        Log.e(TAG, "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+        Log.e(TAG, "📋 DIAGNÓSTICO:")
+        Log.e(TAG, "  1. Device Admin ativo? ${isDeviceAdminActive()}")
+        Log.e(TAG, "  2. API Level: ${Build.VERSION.SDK_INT} (mínimo: ${Build.VERSION_CODES.N})")
+        Log.e(TAG, "  3. Device Admin Component: $deviceAdminComponent")
+        Log.e(TAG, "  4. DevicePolicyManager disponível? ${devicePolicyManager != null}")
+        Log.e(TAG, "")
+        Log.e(TAG, "🔧 POSSÍVEIS SOLUÇÕES:")
+        Log.e(TAG, "  1. Verifique se Device Admin está realmente ativo")
+        Log.e(TAG, "     → Configurações → Segurança → Administradores do dispositivo")
+        Log.e(TAG, "  2. Reinstale o app após ativar Device Admin")
+        Log.e(TAG, "     → Isso aplica a política <reboot /> do device_admin.xml")
+        Log.e(TAG, "  3. Verifique se device_admin.xml tem <reboot />")
+        Log.e(TAG, "  4. Alguns fabricantes bloqueiam reboot remoto")
+        Log.e(TAG, "  5. Dispositivo pode precisar de root para reboot remoto")
+        Log.e(TAG, "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
         return false
     }
     

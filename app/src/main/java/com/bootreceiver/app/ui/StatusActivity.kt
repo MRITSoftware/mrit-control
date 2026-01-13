@@ -122,13 +122,21 @@ class StatusActivity : AppCompatActivity() {
     
     private fun updateDeviceAdminStatus() {
         val isActive = rebootManager.isDeviceAdminActive()
+        val apiLevel = Build.VERSION.SDK_INT
+        val minApiLevel = android.os.Build.VERSION_CODES.N // API 24
+        
         if (isActive) {
-            statusDeviceAdmin.text = "✅ Device Admin ATIVO\nO dispositivo pode ser reiniciado remotamente."
-            statusDeviceAdmin.setTextColor(0xFF10B981.toInt())
+            if (apiLevel >= minApiLevel) {
+                statusDeviceAdmin.text = "✅ Device Admin ATIVO\n✅ API Level OK (${apiLevel})\nO dispositivo pode ser reiniciado remotamente."
+                statusDeviceAdmin.setTextColor(0xFF10B981.toInt())
+            } else {
+                statusDeviceAdmin.text = "✅ Device Admin ATIVO\n⚠️ API Level muito antigo (${apiLevel}, precisa ${minApiLevel}+)\nReboot remoto pode não funcionar."
+                statusDeviceAdmin.setTextColor(0xFFFBBF24.toInt())
+            }
             btnRequestDeviceAdmin.text = "Device Admin Ativo"
             btnRequestDeviceAdmin.isEnabled = false
         } else {
-            statusDeviceAdmin.text = "❌ Device Admin INATIVO\nAtive para permitir reboot remoto."
+            statusDeviceAdmin.text = "❌ Device Admin INATIVO\n⚠️ Ative para permitir reboot remoto.\n⚠️ IMPORTANTE: Reinstale o app após ativar!"
             statusDeviceAdmin.setTextColor(0xFFEF4444.toInt())
             btnRequestDeviceAdmin.text = "Ativar Device Admin"
             btnRequestDeviceAdmin.isEnabled = true
@@ -238,7 +246,27 @@ class StatusActivity : AppCompatActivity() {
                     Toast.makeText(this@StatusActivity, "✅ Comando enviado! Reiniciando...", Toast.LENGTH_SHORT).show()
                     delay(2000)
                 } else {
-                    Toast.makeText(this@StatusActivity, "❌ Falha ao reiniciar. Verifique os logs.", Toast.LENGTH_LONG).show()
+                    val apiLevel = Build.VERSION.SDK_INT
+                    val minApiLevel = android.os.Build.VERSION_CODES.N
+                    // Mostra diálogo com informações detalhadas
+                    AlertDialog.Builder(this@StatusActivity)
+                        .setTitle("❌ Falha ao Reiniciar")
+                        .setMessage(
+                            "O dispositivo não foi reiniciado.\n\n" +
+                            "Possíveis causas:\n" +
+                            "• Device Admin não está realmente ativo\n" +
+                            "• App não foi reinstalado após ativar Device Admin\n" +
+                            "• Fabricante bloqueou reboot remoto\n" +
+                            "• API Level muito antigo ($apiLevel, precisa $minApiLevel+)\n\n" +
+                            "Soluções:\n" +
+                            "1. Desative Device Admin\n" +
+                            "2. Reinstale o app\n" +
+                            "3. Ative Device Admin novamente\n" +
+                            "4. Teste novamente\n\n" +
+                            "Verifique os logs para mais detalhes."
+                        )
+                        .setPositiveButton("OK", null)
+                        .show()
                     btnTestReboot.isEnabled = true
                     btnTestReboot.text = "Testar Reboot Agora"
                 }
