@@ -65,41 +65,76 @@ class SupabaseManager {
      * 
      * @param deviceId ID único do dispositivo
      * @param command Tipo de comando (ex: "restart_app")
+     * @return true se marcou com sucesso, false caso contrário
      */
     suspend fun markCommandAsExecuted(deviceId: String, command: String = "restart_app"): Boolean = withContext(Dispatchers.IO) {
         try {
-            Log.d(TAG, "Marcando comando como executado: device_id=$deviceId, command=$command")
+            Log.d(TAG, "📝 Marcando comando como executado: device_id=$deviceId, command=$command")
             
-            // Busca o comando
-            val cmd = client.from("device_commands")
-                .select(columns = Columns.ALL) {
-                    filter {
-                        eq("device_id", deviceId)
-                        eq("command", command)
-                        eq("executed", false)
-                    }
-                }
-                .decodeSingle<DeviceCommand>()
-            
-            // Atualiza como executado
-            if (cmd.id != null) {
-                val updateData = mapOf(
-                    "executed" to true,
-                    "executed_at" to java.time.Instant.now().toString()
-                )
-                
+            // Busca TODOS os comandos pendentes (pode haver múltiplos)
+            val commands = try {
                 client.from("device_commands")
-                    .update(updateData) {
+                    .select(columns = Columns.ALL) {
                         filter {
-                            eq("id", cmd.id)
+                            eq("device_id", deviceId)
+                            eq("command", command)
+                            eq("executed", false)
                         }
                     }
-                
-                Log.d(TAG, "✅ Comando marcado como executado: ${cmd.id}")
+                    .decodeList<DeviceCommand>()
+            } catch (e: Exception) {
+                if (e.message?.contains("No rows") == true || 
+                    e.message?.contains("not found") == true ||
+                    e.message?.contains("No value") == true) {
+                    Log.d(TAG, "ℹ️ Nenhum comando pendente encontrado")
+                    emptyList()
+                } else {
+                    Log.e(TAG, "❌ Erro ao buscar comandos: ${e.message}", e)
+                    return@withContext false
+                }
             }
-            true
+            
+            if (commands.isEmpty()) {
+                Log.d(TAG, "ℹ️ Nenhum comando pendente para marcar como executado")
+                return@withContext true // Retorna true porque não há nada para fazer
+            }
+            
+            Log.d(TAG, "📋 Encontrados ${commands.size} comando(s) pendente(s)")
+            
+            // Marca TODOS os comandos pendentes como executados
+            var successCount = 0
+            for (cmd in commands) {
+                if (cmd.id != null) {
+                    try {
+                        val updateData = mapOf(
+                            "executed" to true,
+                            "executed_at" to java.time.Instant.now().toString()
+                        )
+                        
+                        client.from("device_commands")
+                            .update(updateData) {
+                                filter {
+                                    eq("id", cmd.id)
+                                }
+                            }
+                        
+                        successCount++
+                        Log.d(TAG, "✅ Comando ${cmd.id} marcado como executado")
+                    } catch (e: Exception) {
+                        Log.e(TAG, "❌ Erro ao marcar comando ${cmd.id}: ${e.message}", e)
+                    }
+                }
+            }
+            
+            if (successCount > 0) {
+                Log.d(TAG, "✅ Total: $successCount comando(s) marcado(s) como executado(s)")
+                return@withContext true
+            } else {
+                Log.e(TAG, "❌ Nenhum comando foi marcado como executado")
+                return@withContext false
+            }
         } catch (e: Exception) {
-            Log.e(TAG, "Erro ao marcar comando como executado: ${e.message}", e)
+            Log.e(TAG, "❌ Erro crítico ao marcar comando como executado: ${e.message}", e)
             false
         }
     }

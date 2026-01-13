@@ -92,8 +92,20 @@ adb logcat | grep -E "AppRestartMonitor|AppLauncher"
 
 1. **O app monitora a cada 30 segundos** - pode levar até 30 segundos para detectar o comando
 2. **Reiniciar app não reinicia o dispositivo** - apenas fecha e reabre o app configurado
-3. **Se o app não fechar completamente**, pode não reiniciar corretamente
-4. **Alguns apps podem não permitir fechamento** - depende das permissões do app
+3. **Cooldown de 5 minutos** - após reiniciar, o app não reinicia novamente por 5 minutos (proteção contra loops)
+4. **Se o app não fechar completamente**, pode não reiniciar corretamente
+5. **Alguns apps podem não permitir fechamento** - depende das permissões do app
+
+## 🛑 Se o App Continuar Reiniciando
+
+Se o app reiniciar continuamente (loop), veja: [COMO_PARAR_REINICIAR.md](COMO_PARAR_REINICIAR.md)
+
+**Solução rápida no Supabase:**
+```sql
+UPDATE device_commands 
+SET executed = true, executed_at = NOW() 
+WHERE command = 'restart_app' AND executed = false;
+```
 
 ## 💡 Dica
 
