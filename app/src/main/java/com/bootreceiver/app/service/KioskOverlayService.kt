@@ -58,41 +58,36 @@ class KioskOverlayService : Service() {
             overlayView = FrameLayout(this).apply {
                 var startX = 0f
                 var startY = 0f
-                var startTime = 0L
-                var isTrackingGesture = false
-                var isNavigationGesture = false
+                var isTrackingBackGesture = false
+                var isBackGesture = false
                 
                 setOnTouchListener { _, event ->
                     val screenWidth = resources.displayMetrics.widthPixels
-                    val screenHeight = resources.displayMetrics.heightPixels
-                    val edgeThreshold = 30f // Área de 30px nas bordas para detectar gestos
+                    val edgeThreshold = 30f // Área de 30px nas bordas laterais para detectar gesto de voltar
                     
                     when (event.action) {
                         MotionEvent.ACTION_DOWN -> {
                             startX = event.x
                             startY = event.y
-                            startTime = System.currentTimeMillis()
-                            isTrackingGesture = false
-                            isNavigationGesture = false
+                            isTrackingBackGesture = false
+                            isBackGesture = false
                             
-                            // Verifica se o toque começou na borda (onde ficam os gestos de navegação)
+                            // Verifica se o toque começou na borda lateral (esquerda ou direita)
                             val isLeftEdge = startX < edgeThreshold
                             val isRightEdge = startX > screenWidth - edgeThreshold
-                            val isBottomEdge = startY > screenHeight - edgeThreshold
                             
-                            // Só começa a rastrear se for na borda
-                            if (isLeftEdge || isRightEdge || isBottomEdge) {
-                                isTrackingGesture = true
-                                Log.d(TAG, "🔍 Rastreando gesto iniciado na borda (${if (isLeftEdge) "esquerda" else if (isRightEdge) "direita" else "inferior"})")
+                            // Só começa a rastrear se for na borda lateral (gesto de voltar)
+                            if (isLeftEdge || isRightEdge) {
+                                isTrackingBackGesture = true
+                                Log.d(TAG, "🔍 Rastreando possível gesto de voltar (borda ${if (isLeftEdge) "esquerda" else "direita"})")
                             }
                             
                             // NÃO bloqueia o ACTION_DOWN - permite que o app receba o toque
-                            // Só vamos bloquear se for realmente um gesto de navegação
                             false
                         }
                         MotionEvent.ACTION_MOVE -> {
-                            if (!isTrackingGesture) {
-                                return@setOnTouchListener false // Não rastreia se não começou na borda
+                            if (!isTrackingBackGesture) {
+                                return@setOnTouchListener false // Não rastreia se não começou na borda lateral
                             }
                             
                             val deltaX = event.x - startX
@@ -102,42 +97,34 @@ class KioskOverlayService : Service() {
                             
                             val isLeftEdge = startX < edgeThreshold
                             val isRightEdge = startX > screenWidth - edgeThreshold
-                            val isBottomEdge = startY > screenHeight - edgeThreshold
                             
-                            // Gesto de voltar: swipe da borda esquerda para direita OU borda direita para esquerda
+                            // Gesto de voltar: swipe da borda lateral para dentro da tela
+                            // Deve ser principalmente horizontal (deltaX > deltaY)
                             if ((isLeftEdge || isRightEdge) && absDeltaX > 50f) {
                                 // Verifica se está se movendo para dentro da tela (direção correta do gesto)
                                 val isMovingInward = (isLeftEdge && deltaX > 0) || (isRightEdge && deltaX < 0)
                                 
+                                // Só bloqueia se for movimento horizontal para dentro
                                 if (isMovingInward && absDeltaX > absDeltaY) {
-                                    isNavigationGesture = true
+                                    isBackGesture = true
                                     Log.d(TAG, "🔒 Gesto de VOLTAR detectado e bloqueado! (swipe da borda ${if (isLeftEdge) "esquerda" else "direita"})")
                                     return@setOnTouchListener true // Bloqueia o gesto
                                 }
                             }
                             
-                            // Gesto de Home: swipe de baixo para cima (movimento para cima)
-                            if (isBottomEdge && absDeltaY > 50f && deltaY < 0) {
-                                if (absDeltaY > absDeltaX) {
-                                    isNavigationGesture = true
-                                    Log.d(TAG, "🔒 Gesto de HOME detectado e bloqueado! (swipe de baixo para cima)")
-                                    return@setOnTouchListener true // Bloqueia o gesto
-                                }
-                            }
-                            
-                            false // Permite movimento se não for gesto de navegação
+                            false // Permite movimento se não for gesto de voltar
                         }
                         MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
-                            if (isNavigationGesture) {
-                                // Se foi um gesto de navegação, bloqueia o ACTION_UP também
-                                Log.d(TAG, "🔒 Finalizando bloqueio de gesto de navegação")
-                                isTrackingGesture = false
-                                isNavigationGesture = false
+                            if (isBackGesture) {
+                                // Se foi um gesto de voltar, bloqueia o ACTION_UP também
+                                Log.d(TAG, "🔒 Finalizando bloqueio de gesto de voltar")
+                                isTrackingBackGesture = false
+                                isBackGesture = false
                                 return@setOnTouchListener true
                             }
                             
-                            isTrackingGesture = false
-                            isNavigationGesture = false
+                            isTrackingBackGesture = false
+                            isBackGesture = false
                             false // Permite ACTION_UP normal passar
                         }
                     }
