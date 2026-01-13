@@ -8,8 +8,10 @@ import android.widget.AdapterView
 import android.widget.ArrayAdapter
 import android.widget.ListView
 import android.widget.Toast
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import com.bootreceiver.app.R
+import com.bootreceiver.app.utils.PermissionChecker
 import com.bootreceiver.app.utils.PreferenceManager
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -34,6 +36,9 @@ class AppSelectionActivity : AppCompatActivity() {
         
         preferenceManager = PreferenceManager(this)
         
+        // Verifica permissões e otimizações
+        checkPermissionsAndOptimizations()
+        
         // Se já estiver configurado, fecha esta activity e abre o app configurado
         if (preferenceManager.isConfigured()) {
             Log.d(TAG, "App já configurado. Abrindo app configurado...")
@@ -55,6 +60,45 @@ class AppSelectionActivity : AppCompatActivity() {
         listView.onItemClickListener = AdapterView.OnItemClickListener { _, _, position, _ ->
             val selectedApp = appsList[position]
             selectApp(selectedApp.packageName, selectedApp.name)
+        }
+    }
+    
+    /**
+     * Verifica permissões e otimizações e alerta o usuário se necessário
+     */
+    private fun checkPermissionsAndOptimizations() {
+        val permissionChecker = PermissionChecker(this)
+        val status = permissionChecker.getFullStatus()
+        
+        if (!status.isReady) {
+            Log.w(TAG, "Problemas detectados: ${status.issues.joinToString()}")
+            
+            val message = buildString {
+                append("Para garantir que o app funcione corretamente no boot, é necessário:\n\n")
+                status.issues.forEach { issue ->
+                    append("• $issue\n")
+                }
+                append("\nDeseja abrir as configurações agora?")
+            }
+            
+            AlertDialog.Builder(this)
+                .setTitle("Configurações Necessárias")
+                .setMessage(message)
+                .setPositiveButton("Abrir Configurações") { _, _ ->
+                    // Abre configurações de otimização de bateria
+                    if (status.batteryOptimized) {
+                        permissionChecker.openBatteryOptimizationSettings()
+                    }
+                    // Abre configurações de overlay se necessário
+                    if (status.issues.any { it.contains("SYSTEM_ALERT_WINDOW") }) {
+                        permissionChecker.openOverlayPermissionSettings()
+                    }
+                }
+                .setNegativeButton("Depois", null)
+                .setCancelable(true)
+                .show()
+        } else {
+            Log.d(TAG, "Todas as permissões e otimizações estão corretas")
         }
     }
     

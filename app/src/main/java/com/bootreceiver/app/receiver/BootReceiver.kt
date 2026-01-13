@@ -5,6 +5,7 @@ import android.content.Context
 import android.content.Intent
 import android.util.Log
 import com.bootreceiver.app.service.BootService
+import com.bootreceiver.app.utils.PermissionChecker
 import com.bootreceiver.app.utils.PreferenceManager
 
 /**
@@ -21,6 +22,20 @@ class BootReceiver : BroadcastReceiver() {
             Intent.ACTION_BOOT_COMPLETED,
             "android.intent.action.QUICKBOOT_POWERON" -> {
                 Log.d(TAG, "Boot detectado! Iniciando processo...")
+                
+                // Verifica permissões e otimizações
+                val permissionChecker = PermissionChecker(context)
+                val status = permissionChecker.getFullStatus()
+                
+                if (!status.isReady) {
+                    Log.w(TAG, "Problemas detectados que podem impedir funcionamento:")
+                    status.issues.forEach { issue ->
+                        Log.w(TAG, "  - $issue")
+                    }
+                    // Continua mesmo assim, mas registra o problema
+                } else {
+                    Log.d(TAG, "Todas as permissões e otimizações estão corretas")
+                }
                 
                 // Verifica se já foi configurado um app para iniciar
                 val preferenceManager = PreferenceManager(context)

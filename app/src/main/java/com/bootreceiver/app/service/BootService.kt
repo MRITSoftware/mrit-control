@@ -71,10 +71,12 @@ class BootService : Service() {
             return
         }
         
-        // Delay inicial após boot (5 segundos)
+        // Delay inicial após boot (15 segundos)
         // Isso garante que o sistema Android está completamente inicializado
-        Log.d(TAG, "Aguardando ${DELAY_AFTER_BOOT_MS}ms após boot...")
+        // e que o WiFi tenha tempo de conectar
+        Log.d(TAG, "Aguardando ${DELAY_AFTER_BOOT_MS}ms (${DELAY_AFTER_BOOT_MS / 1000} segundos) após boot...")
         delay(DELAY_AFTER_BOOT_MS)
+        Log.d(TAG, "Delay concluído. Iniciando verificação de internet...")
         
         // Tenta verificar internet e abrir o app
         tryOpenAppWithInternetCheck(targetPackageName)
@@ -144,7 +146,7 @@ class BootService : Service() {
     
     companion object {
         private const val TAG = "BootService"
-        private const val DELAY_AFTER_BOOT_MS = 5000L // 5 segundos após boot
+        private const val DELAY_AFTER_BOOT_MS = 15000L // 15 segundos após boot
         private const val RETRY_DELAY_MS = 10000L // 10 segundos entre tentativas
         private const val MAX_RETRY_ATTEMPTS = 60 // Máximo de 60 tentativas (10 minutos)
     }
