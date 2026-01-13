@@ -122,17 +122,36 @@ class StatusActivity : AppCompatActivity() {
     
     private fun updateDeviceAdminStatus() {
         val isActive = rebootManager.isDeviceAdminActive()
+        val isDeviceOwner = rebootManager.isDeviceOwner()
         val apiLevel = Build.VERSION.SDK_INT
         val minApiLevel = android.os.Build.VERSION_CODES.N // API 24
+        val isAndroid15Plus = apiLevel >= android.os.Build.VERSION_CODES.UPSIDE_DOWN_CAKE // API 34+
         
         if (isActive) {
-            if (apiLevel >= minApiLevel) {
-                statusDeviceAdmin.text = "✅ Device Admin ATIVO\n✅ API Level OK (${apiLevel})\nO dispositivo pode ser reiniciado remotamente."
-                statusDeviceAdmin.setTextColor(0xFF10B981.toInt())
-            } else {
-                statusDeviceAdmin.text = "✅ Device Admin ATIVO\n⚠️ API Level muito antigo (${apiLevel}, precisa ${minApiLevel}+)\nReboot remoto pode não funcionar."
-                statusDeviceAdmin.setTextColor(0xFFFBBF24.toInt())
+            val statusText = buildString {
+                append("✅ Device Admin ATIVO\n")
+                if (isDeviceOwner) {
+                    append("✅ Device Owner ATIVO\n")
+                } else if (isAndroid15Plus) {
+                    append("⚠️ Device Owner INATIVO\n")
+                    append("Android 15+ requer Device Owner para reboot!\n")
+                }
+                if (apiLevel >= minApiLevel) {
+                    append("✅ API Level OK (${apiLevel})\n")
+                } else {
+                    append("⚠️ API Level muito antigo (${apiLevel}, precisa ${minApiLevel}+)\n")
+                }
+                if (isDeviceOwner || !isAndroid15Plus) {
+                    append("O dispositivo pode ser reiniciado remotamente.")
+                } else {
+                    append("⚠️ Reboot pode não funcionar sem Device Owner.")
+                }
             }
+            
+            statusDeviceAdmin.text = statusText
+            statusDeviceAdmin.setTextColor(
+                if (isDeviceOwner || !isAndroid15Plus) 0xFF10B981.toInt() else 0xFFFBBF24.toInt()
+            )
             btnRequestDeviceAdmin.text = "Device Admin Ativo"
             btnRequestDeviceAdmin.isEnabled = false
         } else {

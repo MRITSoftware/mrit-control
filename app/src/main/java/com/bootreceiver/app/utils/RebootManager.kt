@@ -30,6 +30,17 @@ class RebootManager(private val context: Context) {
     }
     
     /**
+     * Verifica se o app é Device Owner (requerido no Android 15+ para reboot)
+     */
+    fun isDeviceOwner(): Boolean {
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+            devicePolicyManager?.isDeviceOwnerApp(context.packageName) == true
+        } else {
+            false
+        }
+    }
+    
+    /**
      * Solicita ao usuário que configure o app como Device Admin
      * Retorna true se já está ativo, false caso contrário
      */
@@ -64,8 +75,18 @@ class RebootManager(private val context: Context) {
     fun reboot(): Boolean {
         Log.d(TAG, "🔄 ========== INICIANDO TENTATIVA DE REBOOT ==========")
         Log.d(TAG, "Device Admin ativo: ${isDeviceAdminActive()}")
+        Log.d(TAG, "Device Owner: ${isDeviceOwner()}")
         Log.d(TAG, "API Level: ${Build.VERSION.SDK_INT} (N = ${Build.VERSION_CODES.N})")
         Log.d(TAG, "Device Admin Component: $deviceAdminComponent")
+        
+        // Aviso sobre Android 15
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) { // API 34+
+            if (!isDeviceOwner()) {
+                Log.w(TAG, "⚠️ ATENÇÃO: Android 15+ pode requerer Device Owner para reboot")
+                Log.w(TAG, "   Device Admin não é suficiente. Configure como Device Owner via ADB:")
+                Log.w(TAG, "   adb shell dpm set-device-owner ${context.packageName}/.receiver.DeviceAdminReceiver")
+            }
+        }
         
         // Método 1: DevicePolicyManager.reboot() (requer Device Admin e API 24+)
         if (isDeviceAdminActive() && Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
@@ -138,7 +159,7 @@ class RebootManager(private val context: Context) {
         
         // Método 4: Runtime.exec com reboot direto (pode funcionar em alguns dispositivos)
         try {
-            Log.d(TAG, "Tentando reiniciar via Runtime.exec('reboot')...")
+            Log.d(TAG, "🔧 Método 4: Tentando reiniciar via Runtime.exec('reboot')...")
             val process = Runtime.getRuntime().exec("reboot")
             process.waitFor()
             if (process.exitValue() == 0) {
@@ -149,16 +170,68 @@ class RebootManager(private val context: Context) {
             Log.w(TAG, "Runtime.exec('reboot') falhou: ${e.message}")
         }
         
+        // Método 5: Intent ACTION_REBOOT (pode funcionar em alguns dispositivos)
+        try {
+            Log.d(TAG, "🔧 Método 5: Tentando reiniciar via Intent ACTION_REBOOT...")
+            val intent = Intent("android.intent.action.REBOOT").apply {
+                putExtra("nowait", 1)
+                putExtra("interval", 1)
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            }
+            context.startActivity(intent)
+            Log.d(TAG, "✅ Intent ACTION_REBOOT enviado")
+            return true
+        } catch (e: SecurityException) {
+            Log.w(TAG, "Intent ACTION_REBOOT falhou por segurança: ${e.message}")
+        } catch (e: Exception) {
+            Log.w(TAG, "Intent ACTION_REBOOT falhou: ${e.message}")
+        }
+        
+        // Método 6: Usar am broadcast para simular comando de reboot (workaround)
+        try {
+            Log.d(TAG, "🔧 Método 6: Tentando via am broadcast...")
+            val process = Runtime.getRuntime().exec("am broadcast -a android.intent.action.REBOOT")
+            process.waitFor()
+            if (process.exitValue() == 0) {
+                Log.d(TAG, "✅ Comando am broadcast enviado")
+                return true
+            }
+        } catch (e: Exception) {
+            Log.w(TAG, "am broadcast falhou: ${e.message}")
+        }
+        
+        // Método 7: Verificar se é Device Owner (Android 15+ requer isso)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+            try {
+                val isDeviceOwner = devicePolicyManager?.isDeviceOwnerApp(context.packageName) == true
+                Log.d(TAG, "📋 Verificação: É Device Owner? $isDeviceOwner")
+                if (!isDeviceOwner) {
+                    Log.w(TAG, "⚠️ ATENÇÃO: Android 15 pode requerer Device Owner, não apenas Device Admin")
+                    Log.w(TAG, "   Device Admin ativo: ${isDeviceAdminActive()}")
+                    Log.w(TAG, "   Device Owner: $isDeviceOwner")
+                }
+            } catch (e: Exception) {
+                Log.w(TAG, "Erro ao verificar Device Owner: ${e.message}")
+            }
+        }
+        
         Log.e(TAG, "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
         Log.e(TAG, "❌ TODOS OS MÉTODOS DE REINICIAR FALHARAM")
         Log.e(TAG, "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
         Log.e(TAG, "📋 DIAGNÓSTICO:")
         Log.e(TAG, "  1. Device Admin ativo? ${isDeviceAdminActive()}")
-        Log.e(TAG, "  2. API Level: ${Build.VERSION.SDK_INT} (mínimo: ${Build.VERSION_CODES.N})")
-        Log.e(TAG, "  3. Device Admin Component: $deviceAdminComponent")
-        Log.e(TAG, "  4. DevicePolicyManager disponível? ${devicePolicyManager != null}")
+        Log.e(TAG, "  2. Device Owner? ${isDeviceOwner()}")
+        Log.e(TAG, "  3. API Level: ${Build.VERSION.SDK_INT} (mínimo: ${Build.VERSION_CODES.N})")
+        Log.e(TAG, "  4. Device Admin Component: $deviceAdminComponent")
+        Log.e(TAG, "  5. DevicePolicyManager disponível? ${devicePolicyManager != null}")
         Log.e(TAG, "")
         Log.e(TAG, "🔧 POSSÍVEIS SOLUÇÕES:")
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+            Log.e(TAG, "  ⚠️ ANDROID 15+ DETECTADO:")
+            Log.e(TAG, "     Android 15 requer Device Owner (não apenas Device Admin)")
+            Log.e(TAG, "     Configure via ADB (dispositivo não configurado):")
+            Log.e(TAG, "     adb shell dpm set-device-owner ${context.packageName}/.receiver.DeviceAdminReceiver")
+        }
         Log.e(TAG, "  1. Verifique se Device Admin está realmente ativo")
         Log.e(TAG, "     → Configurações → Segurança → Administradores do dispositivo")
         Log.e(TAG, "  2. Reinstale o app após ativar Device Admin")
@@ -166,6 +239,7 @@ class RebootManager(private val context: Context) {
         Log.e(TAG, "  3. Verifique se device_admin.xml tem <reboot />")
         Log.e(TAG, "  4. Alguns fabricantes bloqueiam reboot remoto")
         Log.e(TAG, "  5. Dispositivo pode precisar de root para reboot remoto")
+        Log.e(TAG, "  6. Consulte ALTERNATIVAS_REBOOT.md para mais opções")
         Log.e(TAG, "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
         return false
     }
