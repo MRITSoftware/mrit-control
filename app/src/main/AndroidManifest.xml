@@ -16,6 +16,8 @@
     <!-- Permissão para Foreground Service (Android 9.0+) -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <!-- Permissão para modo kiosk (prevenir minimização) -->
+    <uses-permission android:name="android.permission.GET_TASKS" />
 
     <application
         android:name=".BootReceiverApplication"
@@ -66,6 +68,12 @@
         <!-- Serviço para monitorar comandos de reiniciar app do Supabase -->
         <service
             android:name=".service.AppRestartMonitorService"
+            android:enabled="true"
+            android:exported="false" />
+
+        <!-- Serviço para monitorar modo kiosk -->
+        <service
+            android:name=".service.KioskModeService"
             android:enabled="true"
             android:exported="false" />
 

@@ -229,6 +229,40 @@ class SupabaseManager {
     }
     
     /**
+     * Verifica se o modo kiosk está ativo para o dispositivo
+     * 
+     * @param deviceId ID único do dispositivo
+     * @return true se kiosk_mode está ativo, false caso contrário, null se erro
+     */
+    suspend fun getKioskMode(deviceId: String): Boolean? = withContext(Dispatchers.IO) {
+        try {
+            Log.d(TAG, "🔍 Verificando modo kiosk para dispositivo: $deviceId")
+            
+            val device = client.from("devices")
+                .select(columns = Columns.ALL) {
+                    filter {
+                        eq("device_id", deviceId)
+                    }
+                }
+                .decodeSingle<Device>()
+            
+            val kioskMode = device.kiosk_mode ?: false
+            Log.d(TAG, "ℹ️ Modo kiosk: $kioskMode")
+            return@withContext kioskMode
+        } catch (e: Exception) {
+            if (e.message?.contains("No rows") == true || 
+                e.message?.contains("not found") == true ||
+                e.message?.contains("No value") == true) {
+                Log.d(TAG, "ℹ️ Dispositivo não encontrado. Modo kiosk: false (padrão)")
+                return@withContext false
+            } else {
+                Log.e(TAG, "❌ Erro ao verificar modo kiosk: ${e.message}", e)
+                return@withContext null
+            }
+        }
+    }
+    
+    /**
      * Registra ou atualiza um dispositivo na tabela devices
      * 
      * @param deviceId ID único do dispositivo (Android ID)
@@ -319,6 +353,7 @@ data class Device(
     val registered_at: String? = null,
     val last_seen: String? = null,
     val is_active: Boolean = true,
+    val kiosk_mode: Boolean? = false,  // Modo kiosk (bloqueia minimização)
     val created_at: String? = null,
     val updated_at: String? = null
 )

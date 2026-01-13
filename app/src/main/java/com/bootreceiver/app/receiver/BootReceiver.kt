@@ -84,6 +84,20 @@ class BootReceiver : BroadcastReceiver() {
                 } catch (e: Exception) {
                     Log.e(TAG, "Erro ao iniciar AppRestartMonitorService: ${e.message}", e)
                 }
+                
+                // Inicia o serviço de monitoramento de modo kiosk
+                val kioskIntent = Intent(context, 
+                    com.bootreceiver.app.service.KioskModeService::class.java)
+                try {
+                    if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+                        context.startForegroundService(kioskIntent)
+                    } else {
+                        context.startService(kioskIntent)
+                    }
+                    Log.d(TAG, "KioskModeService iniciado")
+                } catch (e: Exception) {
+                    Log.e(TAG, "Erro ao iniciar KioskModeService: ${e.message}", e)
+                }
             }
             else -> {
                 Log.w(TAG, "Ação desconhecida recebida: ${intent.action}")

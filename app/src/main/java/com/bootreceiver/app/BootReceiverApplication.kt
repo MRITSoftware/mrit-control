@@ -67,6 +67,21 @@ class BootReceiverApplication : Application() {
                 Log.e(TAG, "Erro ao iniciar AppRestartMonitorService: ${e.message}", e)
             }
         }, 1000) // Delay de 1 segundo para garantir inicialização completa
+        
+        // Inicia o serviço de monitoramento de modo kiosk
+        android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
+            try {
+                val kioskIntent = Intent(this, com.bootreceiver.app.service.KioskModeService::class.java)
+                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+                    startForegroundService(kioskIntent)
+                } else {
+                    startService(kioskIntent)
+                }
+                Log.d(TAG, "KioskModeService iniciado")
+            } catch (e: Exception) {
+                Log.e(TAG, "Erro ao iniciar KioskModeService: ${e.message}", e)
+            }
+        }, 2000) // Delay de 2 segundos
     }
     
     /**
