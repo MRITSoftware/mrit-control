@@ -201,21 +201,46 @@ class KioskModeService : Service() {
     
     /**
      * Monitoramento agressivo do app quando kiosk está ativo
-     * Verifica constantemente e reabre imediatamente se minimizado
+     * Verifica constantemente e reabre imediatamente se minimizado ou fechado
      */
     private suspend fun aggressiveKioskMonitoring(targetPackage: String) {
+        var consecutiveFailures = 0
         while (isRunning) {
             try {
                 val kioskMode = supabaseManager.getKioskMode(deviceId)
                 if (kioskMode == true) {
                     if (!isAppRunning(targetPackage)) {
-                        Log.d(TAG, "🚨 APP MINIMIZADO! REABRINDO IMEDIATAMENTE...")
+                        consecutiveFailures++
+                        Log.d(TAG, "🚨 APP FECHADO/MINIMIZADO! REABRINDO IMEDIATAMENTE... (tentativa $consecutiveFailures)")
                         val appLauncher = AppLauncher(this@KioskModeService)
+                        
+                        // Tenta abrir o app múltiplas vezes rapidamente
                         appLauncher.launchApp(targetPackage)
+                        delay(300) // Aguarda 300ms
+                        
+                        // Se ainda não está rodando, tenta novamente
+                        if (!isAppRunning(targetPackage)) {
+                            Log.d(TAG, "⚠️ Tentativa 2: Reabrindo app...")
+                            appLauncher.launchApp(targetPackage)
+                            delay(500)
+                        }
+                        
+                        // Se ainda não está rodando, tenta mais uma vez
+                        if (!isAppRunning(targetPackage)) {
+                            Log.d(TAG, "⚠️ Tentativa 3: Reabrindo app...")
+                            appLauncher.launchApp(targetPackage)
+                        }
+                    } else {
+                        // App está rodando, reseta contador de falhas
+                        if (consecutiveFailures > 0) {
+                            Log.d(TAG, "✅ App reaberto com sucesso após $consecutiveFailures tentativas")
+                            consecutiveFailures = 0
+                        }
                     }
                     delay(CHECK_INTERVAL_MS) // Verifica muito frequentemente
                 } else {
                     // Se kiosk foi desativado, para o monitoramento agressivo
+                    Log.d(TAG, "🔓 Kiosk desativado - parando monitoramento agressivo")
                     break
                 }
             } catch (e: Exception) {
@@ -282,20 +307,41 @@ class KioskModeService : Service() {
     
     /**
      * Verifica se um app está rodando em foreground
+     * Melhorado para detectar se o app foi fechado (não apenas minimizado)
      */
     private fun isAppRunning(packageName: String): Boolean {
         try {
             val activityManager = getSystemService(ActivityManager::class.java)
             
-            // Método para Android 5.0+ (API 21+)
+            // Método 1: Verifica processos em foreground
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
                 val runningProcesses = activityManager.runningAppProcesses
-                return runningProcesses?.any { 
+                val isForeground = runningProcesses?.any { 
                     it.processName == packageName && 
-                    it.importance == ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND
+                    (it.importance == ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND ||
+                     it.importance == ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND_SERVICE)
                 } == true
+                
+                if (isForeground) {
+                    return true
+                }
+            }
+            
+            // Método 2: Verifica a activity no topo (mais confiável)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                val runningTasks = activityManager.getAppTasks()
+                if (runningTasks != null && runningTasks.isNotEmpty()) {
+                    for (task in runningTasks) {
+                        val taskInfo = task.taskInfo
+                        if (taskInfo != null && taskInfo.topActivity != null) {
+                            if (taskInfo.topActivity!!.packageName == packageName) {
+                                return true
+                            }
+                        }
+                    }
+                }
             } else {
-                // Método alternativo para versões antigas (deprecated mas funciona)
+                // Método alternativo para versões antigas
                 @Suppress("DEPRECATION")
                 val runningTasks = activityManager.getRunningTasks(1)
                 if (runningTasks.isNotEmpty()) {
@@ -304,6 +350,29 @@ class KioskModeService : Service() {
                         return true
                     }
                 }
+            }
+            
+            // Método 3: Verifica se o processo existe (mesmo em background)
+            // Se o processo não existe, o app foi fechado
+            try {
+                val packageManager = packageManager
+                val appInfo = packageManager.getApplicationInfo(packageName, 0)
+                val pid = android.os.Process.getUidForName(packageName)
+                
+                // Se chegou aqui, o app está instalado, mas verifica se está rodando
+                val runningProcesses = activityManager.runningAppProcesses
+                val processExists = runningProcesses?.any { 
+                    it.processName == packageName
+                } == true
+                
+                // Se o processo não existe, o app foi fechado
+                if (!processExists) {
+                    Log.d(TAG, "📱 Processo do app não existe - app foi fechado")
+                    return false
+                }
+            } catch (e: Exception) {
+                // Se não conseguiu obter info do app, assume que não está rodando
+                Log.d(TAG, "📱 Não foi possível verificar processo: ${e.message}")
             }
             
             return false
@@ -316,7 +385,33 @@ class KioskModeService : Service() {
     override fun onDestroy() {
         super.onDestroy()
         isRunning = false
-        Log.d(TAG, "KioskModeService destruído")
+        Log.d(TAG, "⚠️ KioskModeService destruído - tentando reiniciar...")
+        
+        // Se o serviço foi destruído mas kiosk está ativo, tenta reiniciar
+        serviceScope.launch {
+            try {
+                delay(2000) // Aguarda 2 segundos
+                val kioskMode = supabaseManager.getKioskMode(deviceId)
+                if (kioskMode == true) {
+                    Log.d(TAG, "🔄 Kiosk ainda ativo - reiniciando serviço...")
+                    val restartIntent = Intent(this@KioskModeService, KioskModeService::class.java)
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                        startForegroundService(restartIntent)
+                    } else {
+                        startService(restartIntent)
+                    }
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Erro ao tentar reiniciar serviço: ${e.message}", e)
+            }
+        }
+    }
+    
+    override fun onTaskRemoved(rootIntent: Intent?) {
+        super.onTaskRemoved(rootIntent)
+        Log.d(TAG, "⚠️ App removido da lista de tarefas - mas serviço continua rodando")
+        // O serviço continua rodando mesmo se o app for fechado
+        // START_STICKY garante que será reiniciado se necessário
     }
     
     companion object {
